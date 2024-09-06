@@ -1,6 +1,9 @@
 [workspace]
+resolver = "2"
 
-members = ["client"]
+members = [
+    "app", "client", "extended-vft/app",  "extended-vft/wasm", "extended-vft/client", "extended-vnft/app", "extended-vnft/wasm", "extended-vnft/client"
+]
 
 
 [package]
@@ -11,15 +14,46 @@ edition = "2021"
 [dependencies]
 l2e-app = { path = "app" }
 
+[workspace.package]
+name = "l2e"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0"
+
+[workspace.dependencies]
+gstd = "1.5.0"
+gtest = "1.5.0"
+gclient = "1.5.0"
+gear-core = "1.5.0"
+gwasm-builder = { package = "gear-wasm-builder", version = "1.5.0" }
+parity-scale-codec = { version = "3.6", default-features = false }
+sails-idl-gen = "=0.3.0"
+sails-client-gen = "=0.3.0"
+sails-rs = "=0.3.0"
+scale-info = { version = "2.10", default-features = false }
+primitive-types = { version = "*", default-features = false }
+derive-more = { version = "*", default-features = false, features = ["display"] }
+log = "*"
+env_logger = "*"
+serde = "1.0"
+serde-json = { package = "serde_json", version = "1.0" }
+syn = "2.0"
+thiserror = "1.0"
+tokio = "1.36"
+trybuild = "1"
+vft-service = { git = "https://github.com/gear-foundation/standards" }
+vnft-service = { git = "https://github.com/gear-foundation/standards" }
+mockall = "0.13"
+
 [build-dependencies]
 l2e-app = { path = "app" }
-sails-rs = { version = "0.4.0", features = ["wasm-builder"] }
-sails-idl-gen = "0.4.0"
+sails-rs = { version = "0.3.0", features = ["wasm-builder"] }
+sails-idl-gen = "0.3.0"
 
 [dev-dependencies]
 l2e = { path = ".", features = ["wasm-binary"] }
 l2e-client = { path = "client" }
-sails-rs = { version = "0.4.0", features = ["gtest"] }
+sails-rs = { version = "0.3.0" }
 tokio = { version = "1.39", features = ["rt", "macros"] }
 
 [features]

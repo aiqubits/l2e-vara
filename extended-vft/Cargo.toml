@@ -2,7 +2,7 @@
 resolver = "2"
 
 members = [
-    "app", "wasm",
+    "app", "wasm", "client"
 ]
 
 [workspace.package]
@@ -32,3 +32,4 @@ thiserror = "1.0"
 tokio = "1.36"
 trybuild = "1"
 vft-service = { git = "https://github.com/gear-foundation/standards" }
+mockall = "0.13"

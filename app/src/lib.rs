@@ -1,6 +1,9 @@
 #![no_std]
-use gstd::{collections::HashMap, format, msg, Decode, Encode, String, TypeInfo, Vec};
+use gstd::{collections::HashMap, format, msg, exec, Decode, Encode, String, TypeInfo, Vec};
 use sails_rs::prelude::*;
+use vft_client::vft;
+use vnft_client::vnft;
+use vnft_client::TokenMetadata;
 
 pub type TokenId = U256;
 
@@ -175,13 +178,13 @@ impl L2eTop {
 
         if self.balances.contains_key(&spender) {
             // cross contract call
-            let call_payload = counter::io::allowance::encode_call();
+            let call_payload = vft::io::Allowance::encode_call(owner, spender);
             let reply_bytes = gstd::msg::send_bytes_for_reply(current_erc20, call_payload, 0, 0)
                 .expect("Failed to send_bytes_for_reply")
                 .await
                 .expect("Failed to send_bytes_for_reply await");
             let reply =
-                <counter::io::allowance as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
+                <vft::io::Allowance as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
                     .expect("Failed to decode_reply");
             return Some(reply);
 
@@ -263,14 +266,13 @@ impl L2eTop {
             gstd::debug!("current_erc20:{:?}", self.erc20_address);
 
             // cross contract call
-            let call_payload = counter::io::balanceOf::encode_call();
+            let call_payload = vft::io::BalanceOf::encode_call(owner);
             let reply_bytes = gstd::msg::send_bytes_for_reply(current_erc20, call_payload, 0, 0)
                 .expect("Failed to send_bytes_for_reply")
                 .await
                 .expect("Failed to send_bytes_for_reply await");
             let result_balance_of =
-                <counter::io::balanceOf as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
-                    .expect("Failed to decode_reply");
+                <vft::io::BalanceOf as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes);
 
             // let result_balance_of = build_call::<DefaultEnvironment>()
             //     // ERC20 address, gas_limit must be some value when in mainnet
@@ -297,13 +299,13 @@ impl L2eTop {
             }
 
             // cross contract call
-            let call_payload = counter::io::approve::encode_call();
+            let call_payload = vft::io::Approve::encode_call(spender, token_value);
             let reply_bytes = gstd::msg::send_bytes_for_reply(current_erc20, call_payload, 0, 0)
                 .expect("Failed to send_bytes_for_reply")
                 .await
                 .expect("Failed to send_bytes_for_reply await");
             let result_approve =
-                <counter::io::approve as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
+                <vft::io::Approve as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
                     .expect("Failed to decode_reply");
 
             // let result_approve = build_call::<DefaultEnvironment>()
@@ -326,7 +328,7 @@ impl L2eTop {
         gstd::debug!("token_value  over");
         if self.balances.contains_key(&spender) {
             gstd::debug!("self.balances.contains(spender)");
-            let mut owner_value = self
+            let owner_value = self
                 .balances
                 .get_mut(&spender)
                 .expect("failed to take owner value");
@@ -337,7 +339,7 @@ impl L2eTop {
             }
 
             owner_value.push((owner, current_value, token_value));
-            self.balances.insert(spender, owner_value.clone());
+            // self.balances.insert(spender, owner_value.clone());
         } else {
             let mut owner_value = Vec::new();
             owner_value.push((owner, current_value, token_value));
@@ -375,13 +377,19 @@ impl L2eTop {
         gstd::debug!("token_id:{:?}", token_id);
         // cross contract call
         // call ERC721 mint function
-        let call_payload = counter::io::mint::encode_call();
+        let tm = TokenMetadata {
+            name: "L2E".to_string(),
+            description: "L2E.TOP".to_string(),
+            media: "https://l2e-demonstrate.vercel.app/".to_string(),
+            reference: "".to_string(),
+        };
+        let call_payload = vnft::io::Mint::encode_call(exec::program_id(), tm);
         let reply_bytes = gstd::msg::send_bytes_for_reply(current_erc721, call_payload, 0, 0)
             .expect("Failed to send_bytes_for_reply")
             .await
             .expect("Failed to send_bytes_for_reply await");
         let mint_nft =
-            <counter::io::allowance as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
+            <vnft::io::Mint as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
                 .expect("Failed to decode_reply");
 
         // let mint_approve_nft = build_call::<DefaultEnvironment>()
@@ -403,13 +411,13 @@ impl L2eTop {
 
         // cross contract call
         // call ERC721 approve function
-        let call_payload = counter::io::approve::encode_call();
+        let call_payload = vnft::io::Approve::encode_call(spender, token_id);
         let reply_bytes = gstd::msg::send_bytes_for_reply(current_erc721, call_payload, 0, 0)
             .expect("Failed to send_bytes_for_reply")
             .await
             .expect("Failed to send_bytes_for_reply await");
         let approve_nft =
-            <counter::io::approve as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
+            <vnft::io::Approve as sails_rs::calls::ActionIo>::decode_reply(&reply_bytes)
                 .expect("Failed to decode_reply");
 
         // let approve_nft = build_call::<DefaultEnvironment>()
@@ -431,12 +439,12 @@ impl L2eTop {
 
         // store nft tokenid and spender address
         if self.nfts.contains_key(&owner) {
-            let mut nft_tokens = self
+            let nft_tokens = self
                 .nfts
                 .get_mut(&owner)
                 .expect("Failed to get (spender, token_id)");
             nft_tokens.push((spender, token_id, false));
-            self.nfts.insert(owner, nft_tokens.clone());
+            // self.nfts.insert(owner, nft_tokens.clone());
         } else {
             let mut spender_nftid_claim = Vec::new();
             spender_nftid_claim.push((spender, token_id, false));
